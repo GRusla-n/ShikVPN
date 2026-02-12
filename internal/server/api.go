@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
+	"time"
 
 	"github.com/gavsh/simplevpn/internal/crypto"
 	"github.com/gavsh/simplevpn/internal/tunnel"
@@ -18,11 +20,11 @@ type RegisterRequest struct {
 
 // RegisterResponse is returned to the client after successful registration.
 type RegisterResponse struct {
-	AssignedIP      string `json:"assigned_ip"`
-	ServerPublicKey string `json:"server_public_key"`
-	ServerEndpoint  string `json:"server_endpoint"`
+	AssignedIP      string   `json:"assigned_ip"`
+	ServerPublicKey string   `json:"server_public_key"`
+	ServerEndpoint  string   `json:"server_endpoint"`
 	DNSServers      []string `json:"dns_servers"`
-	MTU             int    `json:"mtu"`
+	MTU             int      `json:"mtu"`
 }
 
 // PeerAddFunc is called when a new peer needs to be added to the WireGuard device.
@@ -35,18 +37,21 @@ type API struct {
 	serverEndpoint  string
 	dnsServers      []string
 	mtu             int
+	apiKey          string
 	onPeerAdd       PeerAddFunc
 	mux             *http.ServeMux
+	server          *http.Server
 }
 
 // NewAPI creates a new registration API handler.
-func NewAPI(ipam *IPAM, serverPubKey, serverEndpoint string, dnsServers []string, mtu int, onPeerAdd PeerAddFunc) *API {
+func NewAPI(ipam *IPAM, serverPubKey, serverEndpoint string, dnsServers []string, mtu int, apiKey string, onPeerAdd PeerAddFunc) *API {
 	api := &API{
 		ipam:            ipam,
 		serverPublicKey: serverPubKey,
 		serverEndpoint:  serverEndpoint,
 		dnsServers:      dnsServers,
 		mtu:             mtu,
+		apiKey:          apiKey,
 		onPeerAdd:       onPeerAdd,
 		mux:             http.NewServeMux(),
 	}
@@ -63,6 +68,15 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
+	}
+
+	// Check API key if configured
+	if a.apiKey != "" {
+		provided := r.Header.Get("X-API-Key")
+		if subtle.ConstantTimeCompare([]byte(provided), []byte(a.apiKey)) != 1 {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
 
 	var req RegisterRequest
@@ -126,10 +140,20 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 // ListenAndServe starts the API server.
 func (a *API) ListenAndServe(addr string) error {
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %w", addr, err)
+	a.server = &http.Server{
+		Addr:    addr,
+		Handler: a.mux,
 	}
 	log.Printf("API server listening on %s", addr)
-	return http.Serve(listener, a.mux)
+	return a.server.ListenAndServe()
+}
+
+// Shutdown gracefully stops the API server.
+func (a *API) Shutdown(timeout time.Duration) error {
+	if a.server == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return a.server.Shutdown(ctx)
 }

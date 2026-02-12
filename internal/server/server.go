@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gavsh/simplevpn/internal/config"
 	"github.com/gavsh/simplevpn/internal/crypto"
@@ -13,11 +14,11 @@ import (
 
 // Server orchestrates the VPN server: tunnel, API, IPAM, and network config.
 type Server struct {
-	cfg        *config.ServerConfig
-	tunnel     *tunnel.Tunnel
-	api        *API
-	ipam       *IPAM
-	netConfig  network.InterfaceConfigurator
+	cfg       *config.ServerConfig
+	tunnel    *tunnel.Tunnel
+	api       *API
+	ipam      *IPAM
+	netConfig network.InterfaceConfigurator
 }
 
 // New creates a new VPN server.
@@ -38,7 +39,7 @@ func (s *Server) Start() error {
 	s.ipam = ipam
 
 	// Create TUN device
-	tun, err := tunnel.CreateTunnel(s.cfg.InterfaceName, s.cfg.MTU)
+	tun, err := tunnel.CreateTunnel(s.cfg.InterfaceName, s.cfg.MTU, s.cfg.LogLevel)
 	if err != nil {
 		return fmt.Errorf("failed to create tunnel: %w", err)
 	}
@@ -76,7 +77,7 @@ func (s *Server) Start() error {
 	serverEndpoint := fmt.Sprintf("%s:%d", s.cfg.ExternalHost, s.cfg.ListenPort)
 
 	// Create and start API
-	s.api = NewAPI(s.ipam, s.cfg.PublicKey, serverEndpoint, s.cfg.DNSServers, s.cfg.MTU, s.addPeer)
+	s.api = NewAPI(s.ipam, s.cfg.PublicKey, serverEndpoint, s.cfg.DNSServers, s.cfg.MTU, s.cfg.APIKey, s.addPeer)
 
 	apiAddr := fmt.Sprintf(":%d", s.cfg.APIPort)
 	go func() {
@@ -110,7 +111,7 @@ func (s *Server) configureNetwork() error {
 
 	// Configure NAT
 	subnet := s.cfg.Address
-	// Extract subnet from address (e.g., "10.0.0.1/24" → "10.0.0.0/24")
+	// Extract subnet from address (e.g., "10.0.0.1/24" -> "10.0.0.0/24")
 	if idx := strings.LastIndex(subnet, "."); idx != -1 {
 		parts := strings.SplitN(subnet, "/", 2)
 		if len(parts) == 2 {
@@ -137,6 +138,14 @@ func (s *Server) addPeer(peer tunnel.PeerConfig) error {
 // Stop gracefully shuts down the server.
 func (s *Server) Stop() {
 	log.Println("Stopping VPN server...")
+
+	// Gracefully shut down the API server
+	if s.api != nil {
+		if err := s.api.Shutdown(5 * time.Second); err != nil {
+			log.Printf("API shutdown error: %v", err)
+		}
+		log.Println("API server stopped")
+	}
 
 	if s.tunnel != nil {
 		ifaceName := s.tunnel.Name()

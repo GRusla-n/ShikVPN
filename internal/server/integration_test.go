@@ -32,6 +32,7 @@ func TestIntegrationRegisterAndVerifyPeer(t *testing.T) {
 		DNSServers:    []string{"1.1.1.1"},
 		MTU:           1420,
 		InterfaceName: "wgtest0",
+		LogLevel:      "error",
 	}
 
 	srv := New(cfg)
@@ -83,6 +84,7 @@ func TestIntegrationTwoClientsUniqueIPs(t *testing.T) {
 		DNSServers:    []string{"1.1.1.1"},
 		MTU:           1420,
 		InterfaceName: "wgtest1",
+		LogLevel:      "error",
 	}
 
 	srv := New(cfg)

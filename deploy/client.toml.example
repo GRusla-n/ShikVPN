@@ -1,0 +1,26 @@
+# SimpleVPN Client Configuration
+# Place next to the vpn-client binary and edit values
+
+# Server WireGuard endpoint (host:port for UDP tunnel traffic)
+server_endpoint = "your.server.ip:51820"
+
+# Server HTTP API URL (for registration)
+server_api_url = "http://your.server.ip:8080"
+
+# Client private key — generate with: vpn-keygen
+private_key = "YOUR_CLIENT_PRIVATE_KEY_BASE64"
+
+# Tunnel MTU (must match server, default: 1420)
+mtu = 1420
+
+# NAT keepalive interval in seconds (helps maintain connections through firewalls)
+persistent_keepalive = 25
+
+# TUN interface name (default: wg0)
+# interface_name = "wg0"
+
+# API key — must match the server's api_key if the server has one configured
+# api_key = "your-secret-api-key"
+
+# WireGuard log level: "verbose", "error", or "silent" (default: "error")
+# log_level = "error"

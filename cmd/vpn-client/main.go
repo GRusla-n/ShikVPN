@@ -10,11 +10,23 @@ import (
 
 	"github.com/gavsh/simplevpn/internal/client"
 	"github.com/gavsh/simplevpn/internal/config"
+	"github.com/gavsh/simplevpn/internal/version"
+	"github.com/gavsh/simplevpn/internal/wintun"
 )
 
 func main() {
+	if err := wintun.Extract(); err != nil {
+		log.Printf("Warning: failed to extract wintun.dll: %v", err)
+	}
+
 	configPath := flag.String("config", "client.toml", "path to client config file")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version.String())
+		return
+	}
 
 	cfg, err := config.LoadClientConfig(*configPath)
 	if err != nil {
@@ -22,12 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrivateKey == "" {
-		fmt.Fprintf(os.Stderr, "Error: private_key is required in config\n")
-		os.Exit(1)
-	}
-	if cfg.ServerAPIURL == "" {
-		fmt.Fprintf(os.Stderr, "Error: server_api_url is required in config\n")
+	if err := config.ValidateClientConfig(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Config error: %v\n", err)
 		os.Exit(1)
 	}
 

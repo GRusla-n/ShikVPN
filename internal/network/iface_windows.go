@@ -4,7 +4,9 @@ package network
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -39,7 +41,11 @@ func (c *WindowsConfigurator) AddRoute(destination string, gateway string, iface
 	if gateway != "" {
 		return runCmd("route", "add", dest, "mask", mask, gateway)
 	}
-	return runCmd("route", "add", dest, "mask", mask, "0.0.0.0", "if", ifaceName)
+	idx, err := getInterfaceIndex(ifaceName)
+	if err != nil {
+		return fmt.Errorf("failed to get interface index for %s: %w", ifaceName, err)
+	}
+	return runCmd("route", "add", dest, "mask", mask, "0.0.0.0", "if", idx)
 }
 
 func (c *WindowsConfigurator) SetDefaultRoute(ifaceName string, gateway string, serverEndpoint string) error {
@@ -62,9 +68,15 @@ func (c *WindowsConfigurator) SetDefaultRoute(ifaceName string, gateway string, 
 		_ = runCmd("route", "add", host, "mask", "255.255.255.255", c.savedGateway)
 	}
 
+	// Get the interface index for route commands
+	idx, err := getInterfaceIndex(ifaceName)
+	if err != nil {
+		return fmt.Errorf("failed to get interface index for %s: %w", ifaceName, err)
+	}
+
 	// Delete current default route and add VPN default route
 	_ = runCmd("route", "delete", "0.0.0.0", "mask", "0.0.0.0")
-	return runCmd("route", "add", "0.0.0.0", "mask", "0.0.0.0", gateway, "if", ifaceName)
+	return runCmd("route", "add", "0.0.0.0", "mask", "0.0.0.0", gateway, "if", idx)
 }
 
 func (c *WindowsConfigurator) RemoveDefaultRoute(ifaceName string) error {
@@ -88,6 +100,16 @@ func (c *WindowsConfigurator) ConfigureNAT(ifaceName string, vpnSubnet string) e
 
 func (c *WindowsConfigurator) RemoveNAT(ifaceName string, vpnSubnet string) error {
 	return runCmd("powershell", "-Command", "Remove-NetNat -Name SimpleVPN -Confirm:$false")
+}
+
+// getInterfaceIndex returns the numeric interface index for a named interface.
+// Windows route commands require the numeric index, not the interface name.
+func getInterfaceIndex(ifaceName string) (string, error) {
+	iface, err := net.InterfaceByName(ifaceName)
+	if err != nil {
+		return "", fmt.Errorf("interface %q not found: %w", ifaceName, err)
+	}
+	return strconv.Itoa(iface.Index), nil
 }
 
 func runCmd(name string, args ...string) error {

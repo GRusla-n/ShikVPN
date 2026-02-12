@@ -43,7 +43,7 @@ func (c *Client) Connect() error {
 
 	// Register with server
 	log.Printf("Registering with server at %s...", c.cfg.ServerAPIURL)
-	regResp, err := Register(c.cfg.ServerAPIURL, pubKeyB64)
+	regResp, err := Register(c.cfg.ServerAPIURL, pubKeyB64, c.cfg.APIKey)
 	if err != nil {
 		return fmt.Errorf("registration failed: %w", err)
 	}
@@ -60,7 +60,7 @@ func (c *Client) Connect() error {
 	}
 
 	// Create TUN device
-	tun, err := tunnel.CreateTunnel(c.cfg.InterfaceName, c.cfg.MTU)
+	tun, err := tunnel.CreateTunnel(c.cfg.InterfaceName, c.cfg.MTU, c.cfg.LogLevel)
 	if err != nil {
 		return fmt.Errorf("failed to create tunnel: %w", err)
 	}

@@ -12,11 +12,11 @@ import (
 
 // PeerConfig holds configuration for a single WireGuard peer.
 type PeerConfig struct {
-	PublicKeyHex         string
-	PresharedKeyHex      string
-	Endpoint             string
-	AllowedIPs           []string
-	PersistentKeepalive  int
+	PublicKeyHex        string
+	PresharedKeyHex     string
+	Endpoint            string
+	AllowedIPs          []string
+	PersistentKeepalive int
 }
 
 // Tunnel wraps a WireGuard device with its TUN interface.
@@ -29,7 +29,8 @@ type Tunnel struct {
 }
 
 // CreateTunnel creates a new TUN device and WireGuard device on top of it.
-func CreateTunnel(name string, mtu int) (*Tunnel, error) {
+// logLevel controls WireGuard logging: "verbose", "error", or "silent".
+func CreateTunnel(name string, mtu int, logLevel string) (*Tunnel, error) {
 	tunDevice, err := tun.CreateTUN(name, mtu)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TUN device %q: %w", name, err)
@@ -41,7 +42,15 @@ func CreateTunnel(name string, mtu int) (*Tunnel, error) {
 		return nil, fmt.Errorf("failed to get TUN device name: %w", err)
 	}
 
-	log := device.NewLogger(device.LogLevelVerbose, fmt.Sprintf("(%s) ", actualName))
+	level := device.LogLevelError
+	switch logLevel {
+	case "verbose":
+		level = device.LogLevelVerbose
+	case "silent":
+		level = device.LogLevelSilent
+	}
+
+	log := device.NewLogger(level, fmt.Sprintf("(%s) ", actualName))
 
 	wgDevice := device.NewDevice(tunDevice, conn.NewDefaultBind(), log)
 

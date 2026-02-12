@@ -27,7 +27,13 @@ Cross-compile for another OS:
 ```bash
 make linux    # Linux amd64
 make darwin   # macOS amd64
-make windows  # Windows amd64
+make windows  # Windows amd64 (wintun.dll embedded)
+```
+
+Check version info:
+
+```bash
+./build/vpn-server -version
 ```
 
 ## Setup
@@ -46,7 +52,7 @@ Save both keypairs. The server needs its own private + public key. Each client n
 
 ### 2. Configure the Server
 
-Create `server.toml`:
+Create `server.toml` (see `deploy/server.toml.example` for a full template):
 
 ```toml
 listen_port = 51820
@@ -57,6 +63,7 @@ private_key = "SERVER_PRIVATE_KEY"
 public_key = "SERVER_PUBLIC_KEY"
 dns_servers = ["1.1.1.1", "8.8.8.8"]
 mtu = 1420
+# api_key = "your-secret-key"
 ```
 
 | Field | Description | Default |
@@ -70,10 +77,12 @@ mtu = 1420
 | `dns_servers` | DNS servers pushed to clients | `["1.1.1.1", "8.8.8.8"]` |
 | `mtu` | Tunnel MTU | `1420` |
 | `interface_name` | TUN interface name | `wg0` |
+| `api_key` | Shared secret for client registration | *(empty = no auth)* |
+| `log_level` | WireGuard log verbosity: `verbose`, `error`, `silent` | `error` |
 
 ### 3. Configure the Client
 
-Create `client.toml`:
+Create `client.toml` (see `deploy/client.toml.example` for a full template):
 
 ```toml
 server_endpoint = "YOUR_SERVER_PUBLIC_IP:51820"
@@ -81,6 +90,7 @@ server_api_url = "http://YOUR_SERVER_PUBLIC_IP:8080"
 private_key = "CLIENT_PRIVATE_KEY"
 mtu = 1420
 persistent_keepalive = 25
+# api_key = "your-secret-key"
 ```
 
 | Field | Description | Default |
@@ -91,6 +101,8 @@ persistent_keepalive = 25
 | `mtu` | Tunnel MTU | `1420` |
 | `persistent_keepalive` | Keepalive interval in seconds (helps with NAT) | `25` |
 | `interface_name` | TUN interface name | `wg0` |
+| `api_key` | Must match server's `api_key` if set | *(empty)* |
+| `log_level` | WireGuard log verbosity: `verbose`, `error`, `silent` | `error` |
 
 ## Running
 
@@ -129,6 +141,7 @@ Press `Ctrl+C` to gracefully shut down either the server or client. The client w
     |                               |
     |  POST /api/v1/register        |
     |  { "public_key": "..." }      |
+    |  X-API-Key: <key>             |
     |------------------------------>|
     |                               |  Allocates IP (10.0.0.2)
     |                               |  Adds WireGuard peer
@@ -143,6 +156,66 @@ Press `Ctrl+C` to gracefully shut down either the server or client. The client w
     |<=============================>|
     |  All traffic routed via VPN   |
 ```
+
+## Production Deployment
+
+### Linux Server Setup
+
+1. **Install the binary:**
+
+```bash
+sudo cp build/vpn-server /usr/local/bin/
+sudo mkdir -p /etc/simplevpn
+sudo cp deploy/server.toml.example /etc/simplevpn/server.toml
+# Edit /etc/simplevpn/server.toml with your keys and settings
+```
+
+2. **Generate an API key** (recommended):
+
+```bash
+openssl rand -hex 32
+# Add the output as api_key in server.toml
+```
+
+3. **Install the systemd service:**
+
+```bash
+sudo cp deploy/simplevpn-server.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now simplevpn-server
+sudo journalctl -u simplevpn-server -f   # view logs
+```
+
+4. **Open firewall ports:**
+
+```bash
+# UFW
+sudo ufw allow 51820/udp   # WireGuard
+sudo ufw allow 8080/tcp    # Registration API
+
+# firewalld
+sudo firewall-cmd --permanent --add-port=51820/udp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+```
+
+5. **TLS for the registration API:**
+
+The registration API speaks plain HTTP. In production, place it behind a reverse proxy (Caddy, nginx) that terminates TLS. This protects the API key in transit.
+
+### Windows Client Setup
+
+`wintun.dll` is embedded in the executables — no separate DLL download is needed.
+
+1. **Create `client.toml`** next to the exe (copy from `deploy/client.toml.example`).
+
+2. **Run as Administrator:**
+
+```powershell
+.\vpn-client.exe -config client.toml
+```
+
+3. Press `Ctrl+C` to disconnect and restore original routes.
 
 ## Firewall Notes
 

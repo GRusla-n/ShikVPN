@@ -14,6 +14,11 @@ import (
 
 func setupTestAPI(t *testing.T) (*API, *httptest.Server) {
 	t.Helper()
+	return setupTestAPIWithKey(t, "")
+}
+
+func setupTestAPIWithKey(t *testing.T, apiKey string) (*API, *httptest.Server) {
+	t.Helper()
 
 	ipam, err := NewIPAM("10.0.0.1/24")
 	if err != nil {
@@ -29,7 +34,7 @@ func setupTestAPI(t *testing.T) (*API, *httptest.Server) {
 	noop := func(peer tunnel.PeerConfig) error { return nil }
 
 	api := NewAPI(ipam, crypto.KeyToBase64(kp.PublicKey), "1.2.3.4:51820",
-		[]string{"1.1.1.1"}, 1420, noop)
+		[]string{"1.1.1.1"}, 1420, apiKey, noop)
 
 	server := httptest.NewServer(api.Handler())
 	return api, server
@@ -174,5 +179,97 @@ func TestRegisterReturnsIPInSubnet(t *testing.T) {
 	}
 	if !strings.HasSuffix(regResp.AssignedIP, "/24") {
 		t.Errorf("AssignedIP %s should have /24 suffix", regResp.AssignedIP)
+	}
+}
+
+func TestRegisterWithAPIKeyValid(t *testing.T) {
+	_, server := setupTestAPIWithKey(t, "test-secret-key")
+	defer server.Close()
+
+	kp, _ := crypto.GenerateKeyPair()
+	reqBody, _ := json.Marshal(RegisterRequest{
+		PublicKey: crypto.KeyToBase64(kp.PublicKey),
+	})
+
+	req, _ := http.NewRequest("POST", server.URL+"/api/v1/register", bytes.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", "test-secret-key")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("request error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestRegisterWithAPIKeyMissing(t *testing.T) {
+	_, server := setupTestAPIWithKey(t, "test-secret-key")
+	defer server.Close()
+
+	kp, _ := crypto.GenerateKeyPair()
+	reqBody, _ := json.Marshal(RegisterRequest{
+		PublicKey: crypto.KeyToBase64(kp.PublicKey),
+	})
+
+	// No X-API-Key header
+	resp, err := http.Post(server.URL+"/api/v1/register", "application/json",
+		bytes.NewReader(reqBody))
+	if err != nil {
+		t.Fatalf("POST error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestRegisterWithAPIKeyWrong(t *testing.T) {
+	_, server := setupTestAPIWithKey(t, "test-secret-key")
+	defer server.Close()
+
+	kp, _ := crypto.GenerateKeyPair()
+	reqBody, _ := json.Marshal(RegisterRequest{
+		PublicKey: crypto.KeyToBase64(kp.PublicKey),
+	})
+
+	req, _ := http.NewRequest("POST", server.URL+"/api/v1/register", bytes.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", "wrong-key")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("request error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", resp.StatusCode)
+	}
+}
+
+func TestRegisterNoAPIKeyConfigured(t *testing.T) {
+	// When no API key is configured, requests without a key should succeed
+	_, server := setupTestAPI(t) // no API key
+	defer server.Close()
+
+	kp, _ := crypto.GenerateKeyPair()
+	reqBody, _ := json.Marshal(RegisterRequest{
+		PublicKey: crypto.KeyToBase64(kp.PublicKey),
+	})
+
+	resp, err := http.Post(server.URL+"/api/v1/register", "application/json",
+		bytes.NewReader(reqBody))
+	if err != nil {
+		t.Fatalf("POST error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200 (no auth configured)", resp.StatusCode)
 	}
 }

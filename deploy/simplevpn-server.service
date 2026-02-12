@@ -1,0 +1,26 @@
+[Unit]
+Description=SimpleVPN Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/vpn-server -config /etc/simplevpn/server.toml
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/dev/net/tun
+PrivateTmp=yes
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=simplevpn
+
+[Install]
+WantedBy=multi-user.target
