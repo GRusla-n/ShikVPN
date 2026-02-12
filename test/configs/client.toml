@@ -1,0 +1,7 @@
+# Docker test client config
+# Replace key with output from vpn-keygen
+server_endpoint = "172.20.0.10:51820"
+server_api_url = "http://172.20.0.10:8080"
+private_key = "8DxwuVSWsSELl+Z3wmCsnSfd90ehBSuocw7mnWE+2H0="
+mtu = 1420
+persistent_keepalive = 25

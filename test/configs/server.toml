@@ -1,0 +1,10 @@
+# Docker test server config
+# Replace keys with output from vpn-keygen
+listen_port = 51820
+address = "10.0.0.1/24"
+private_key = "EDI/EUrpT/M/euohOtIqRTmpgcjC8xb9Erw90hzQWEs="
+public_key = "MbqGZXbTSkMTV8A1obeK5TrQ3u+/5Hfuo51Ktuc/xxo="
+api_port = 8080
+external_host = "172.20.0.10"
+dns_servers = ["1.1.1.1", "8.8.8.8"]
+mtu = 1420

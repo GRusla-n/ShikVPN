@@ -1,0 +1,43 @@
+services:
+  vpn-server:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+    volumes:
+      - ./configs:/app/configs
+    ports:
+      - "8080:8080"
+    command: ["./vpn-server", "-config", "/app/configs/server.toml"]
+    networks:
+      vpn-test:
+        ipv4_address: 172.20.0.10
+
+  vpn-test-runner:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./configs:/app/configs
+    command: ["./run-test.sh"]
+    depends_on:
+      - vpn-server
+    networks:
+      vpn-test:
+        ipv4_address: 172.20.0.20
+
+networks:
+  vpn-test:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

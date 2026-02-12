@@ -1,0 +1,26 @@
+# SimpleVPN Server Configuration
+
+# WireGuard listen port (UDP)
+listen_port = 51820
+
+# VPN subnet address (server gets this IP)
+address = "10.0.0.1/24"
+
+# Server keypair (generate with vpn-keygen)
+private_key = "YOUR_SERVER_PRIVATE_KEY_BASE64"
+public_key = "YOUR_SERVER_PUBLIC_KEY_BASE64"
+
+# HTTP API port for client registration
+api_port = 8080
+
+# External host/IP that clients connect to
+external_host = "your.server.ip"
+
+# DNS servers pushed to clients
+dns_servers = ["1.1.1.1", "8.8.8.8"]
+
+# Interface MTU
+mtu = 1420
+
+# TUN interface name (optional, default: wg0)
+# interface_name = "wg0"

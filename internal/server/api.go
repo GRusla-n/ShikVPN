@@ -1,0 +1,135 @@
+package server
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+
+	"github.com/gavsh/simplevpn/internal/crypto"
+	"github.com/gavsh/simplevpn/internal/tunnel"
+)
+
+// RegisterRequest is the JSON body for client registration.
+type RegisterRequest struct {
+	PublicKey string `json:"public_key"`
+}
+
+// RegisterResponse is returned to the client after successful registration.
+type RegisterResponse struct {
+	AssignedIP      string `json:"assigned_ip"`
+	ServerPublicKey string `json:"server_public_key"`
+	ServerEndpoint  string `json:"server_endpoint"`
+	DNSServers      []string `json:"dns_servers"`
+	MTU             int    `json:"mtu"`
+}
+
+// PeerAddFunc is called when a new peer needs to be added to the WireGuard device.
+type PeerAddFunc func(peer tunnel.PeerConfig) error
+
+// API handles the HTTP registration endpoint.
+type API struct {
+	ipam            *IPAM
+	serverPublicKey string
+	serverEndpoint  string
+	dnsServers      []string
+	mtu             int
+	onPeerAdd       PeerAddFunc
+	mux             *http.ServeMux
+}
+
+// NewAPI creates a new registration API handler.
+func NewAPI(ipam *IPAM, serverPubKey, serverEndpoint string, dnsServers []string, mtu int, onPeerAdd PeerAddFunc) *API {
+	api := &API{
+		ipam:            ipam,
+		serverPublicKey: serverPubKey,
+		serverEndpoint:  serverEndpoint,
+		dnsServers:      dnsServers,
+		mtu:             mtu,
+		onPeerAdd:       onPeerAdd,
+		mux:             http.NewServeMux(),
+	}
+	api.mux.HandleFunc("/api/v1/register", api.handleRegister)
+	return api
+}
+
+// Handler returns the HTTP handler for the API.
+func (a *API) Handler() http.Handler {
+	return a.mux
+}
+
+func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.PublicKey == "" {
+		http.Error(w, "public_key is required", http.StatusBadRequest)
+		return
+	}
+
+	// Validate the key is valid base64
+	if _, err := crypto.KeyFromBase64(req.PublicKey); err != nil {
+		http.Error(w, fmt.Sprintf("invalid public_key: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	// Allocate an IP for this peer
+	assignedIP, err := a.ipam.Allocate(req.PublicKey)
+	if err != nil {
+		log.Printf("IPAM allocation failed: %v", err)
+		http.Error(w, "failed to allocate IP address", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert pubkey to hex for WireGuard UAPI
+	pubKeyHex, err := crypto.Base64ToHex(req.PublicKey)
+	if err != nil {
+		http.Error(w, "invalid public key encoding", http.StatusBadRequest)
+		return
+	}
+
+	// Add peer to WireGuard device
+	peer := tunnel.PeerConfig{
+		PublicKeyHex: pubKeyHex,
+		AllowedIPs:   []string{assignedIP.String() + "/32"},
+	}
+
+	if err := a.onPeerAdd(peer); err != nil {
+		log.Printf("Failed to add peer: %v", err)
+		a.ipam.Release(req.PublicKey)
+		http.Error(w, "failed to configure peer", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Registered peer %s with IP %s", req.PublicKey[:8]+"...", assignedIP.String())
+
+	resp := RegisterResponse{
+		AssignedIP:      assignedIP.String() + "/24",
+		ServerPublicKey: a.serverPublicKey,
+		ServerEndpoint:  a.serverEndpoint,
+		DNSServers:      a.dnsServers,
+		MTU:             a.mtu,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// ListenAndServe starts the API server.
+func (a *API) ListenAndServe(addr string) error {
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on %s: %w", addr, err)
+	}
+	log.Printf("API server listening on %s", addr)
+	return http.Serve(listener, a.mux)
+}

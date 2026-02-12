@@ -1,0 +1,24 @@
+build/
+*.exe
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+
+# Config files with real keys
+*.toml
+!test/configs/*.toml
+
+# Environment
+.env
