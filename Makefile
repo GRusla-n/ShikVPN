@@ -1,4 +1,4 @@
-.PHONY: all build clean test linux darwin windows keygen server client
+.PHONY: all build clean test linux darwin windows keygen server client gui gui-dev
 
 BINARY_DIR=build
 MODULE=github.com/gavsh/simplevpn
@@ -66,6 +66,21 @@ else
 clean:
 	rm -rf $(BINARY_DIR)/*
 endif
+
+# GUI targets (requires wails CLI: go install github.com/wailsapp/wails/v2/cmd/wails@latest)
+WAILS=$(shell go env GOPATH)/bin/wails
+GUI_DIR=cmd/vpn-client-gui
+
+gui:
+	cd $(GUI_DIR) && "$(WAILS)" build
+ifeq ($(OS),Windows_NT)
+	copy $(subst /,\,$(GUI_DIR))\build\bin\simplevpn-gui.exe $(BINARY_DIR)\simplevpn-gui.exe
+else
+	cp $(GUI_DIR)/build/bin/simplevpn-gui* $(BINARY_DIR)/
+endif
+
+gui-dev:
+	cd $(GUI_DIR) && "$(WAILS)" dev
 
 # Docker testing
 docker-test: export GOOS = linux

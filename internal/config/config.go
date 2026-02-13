@@ -27,17 +27,17 @@ type ServerConfig struct {
 
 // ClientConfig holds the VPN client configuration.
 type ClientConfig struct {
-	ServerEndpoint      string `toml:"server_endpoint"`
-	ServerAPIURL        string `toml:"server_api_url"`
-	ServerPublicKey     string `toml:"server_public_key"`
-	PrivateKey          string `toml:"private_key"`
-	Address             string `toml:"address"`
-	DNS                 string `toml:"dns"`
-	MTU                 int    `toml:"mtu"`
-	PersistentKeepalive int    `toml:"persistent_keepalive"`
-	InterfaceName       string `toml:"interface_name"`
-	APIKey              string `toml:"api_key"`
-	LogLevel            string `toml:"log_level"`
+	ServerEndpoint      string `toml:"server_endpoint" json:"server_endpoint"`
+	ServerAPIURL        string `toml:"server_api_url" json:"server_api_url"`
+	ServerPublicKey     string `toml:"server_public_key" json:"server_public_key"`
+	PrivateKey          string `toml:"private_key" json:"private_key"`
+	Address             string `toml:"address" json:"address"`
+	DNS                 string `toml:"dns" json:"dns"`
+	MTU                 int    `toml:"mtu" json:"mtu"`
+	PersistentKeepalive int    `toml:"persistent_keepalive" json:"persistent_keepalive"`
+	InterfaceName       string `toml:"interface_name" json:"interface_name"`
+	APIKey              string `toml:"api_key" json:"api_key"`
+	LogLevel            string `toml:"log_level" json:"log_level"`
 }
 
 // LoadServerConfig reads and parses a server config from a TOML file.
@@ -74,7 +74,7 @@ func ParseClientConfig(data string) (*ClientConfig, error) {
 	if _, err := toml.Decode(data, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse client config: %w", err)
 	}
-	applyClientDefaults(cfg)
+	ApplyClientDefaults(cfg)
 	return cfg, nil
 }
 
@@ -180,7 +180,8 @@ func applyServerDefaults(cfg *ServerConfig) {
 	}
 }
 
-func applyClientDefaults(cfg *ClientConfig) {
+// ApplyClientDefaults fills in zero-value fields with sensible defaults.
+func ApplyClientDefaults(cfg *ClientConfig) {
 	if cfg.MTU == 0 {
 		cfg.MTU = DefaultMTU
 	}

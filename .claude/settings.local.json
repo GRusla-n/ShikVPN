@@ -8,7 +8,8 @@
       "Bash(go list:*)",
       "Bash(dir:*)",
       "Bash(go build:*)",
-      "Bash(docker compose up:*)"
+      "Bash(docker compose up:*)",
+      "WebSearch"
     ]
   }
 }

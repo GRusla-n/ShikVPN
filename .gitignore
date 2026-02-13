@@ -24,3 +24,12 @@ vendor/
 
 # Environment
 .env
+
+# GUI (Wails)
+cmd/vpn-client-gui/frontend/node_modules/
+cmd/vpn-client-gui/build/bin/
+cmd/vpn-client-gui/frontend/dist/
+cmd/vpn-client-gui/frontend/wailsjs/
+
+# Windows artifacts
+NUL
