@@ -56,8 +56,8 @@ mtu = 1420
 
 func TestParseClientConfig(t *testing.T) {
 	tomlData := `
-server_endpoint = "1.2.3.4:51820"
-server_api_url = "http://1.2.3.4:8080"
+server = "1.2.3.4"
+api_port = 9090
 server_public_key = "sErVerPuBlIcKeYBase64EnCoDeDhErE=="
 private_key = "cLiEnTpRiVaTeKeYBase64EnCoDeDhErE="
 mtu = 1400
@@ -68,11 +68,11 @@ persistent_keepalive = 30
 		t.Fatalf("ParseClientConfig() error: %v", err)
 	}
 
-	if cfg.ServerEndpoint != "1.2.3.4:51820" {
-		t.Errorf("ServerEndpoint = %s, want 1.2.3.4:51820", cfg.ServerEndpoint)
+	if cfg.Server != "1.2.3.4" {
+		t.Errorf("Server = %s, want 1.2.3.4", cfg.Server)
 	}
-	if cfg.ServerAPIURL != "http://1.2.3.4:8080" {
-		t.Errorf("ServerAPIURL = %s, unexpected", cfg.ServerAPIURL)
+	if cfg.APIPort != 9090 {
+		t.Errorf("APIPort = %d, want 9090", cfg.APIPort)
 	}
 	if cfg.MTU != 1400 {
 		t.Errorf("MTU = %d, want 1400", cfg.MTU)
@@ -117,6 +117,9 @@ func TestClientConfigDefaults(t *testing.T) {
 		t.Fatalf("ParseClientConfig() error: %v", err)
 	}
 
+	if cfg.APIPort != DefaultAPIPort {
+		t.Errorf("default APIPort = %d, want %d", cfg.APIPort, DefaultAPIPort)
+	}
 	if cfg.MTU != DefaultMTU {
 		t.Errorf("default MTU = %d, want %d", cfg.MTU, DefaultMTU)
 	}
@@ -270,10 +273,11 @@ func TestValidateServerConfig_InvalidValues(t *testing.T) {
 func TestValidateClientConfig_Valid(t *testing.T) {
 	key := validKey()
 	cfg := &ClientConfig{
-		PrivateKey:   key,
-		ServerAPIURL: "http://1.2.3.4:8080",
-		MTU:          1420,
-		LogLevel:     "error",
+		PrivateKey: key,
+		Server:     "1.2.3.4",
+		APIPort:    8080,
+		MTU:        1420,
+		LogLevel:   "error",
 	}
 	if err := ValidateClientConfig(cfg); err != nil {
 		t.Errorf("expected no error, got: %v", err)
@@ -283,10 +287,11 @@ func TestValidateClientConfig_Valid(t *testing.T) {
 func TestValidateClientConfig_InvalidValues(t *testing.T) {
 	key := validKey()
 	base := ClientConfig{
-		PrivateKey:   key,
-		ServerAPIURL: "http://1.2.3.4:8080",
-		MTU:          1420,
-		LogLevel:     "error",
+		PrivateKey: key,
+		Server:     "1.2.3.4",
+		APIPort:    8080,
+		MTU:        1420,
+		LogLevel:   "error",
 	}
 
 	tests := []struct {
@@ -300,14 +305,9 @@ func TestValidateClientConfig_InvalidValues(t *testing.T) {
 			want:   "private_key is required",
 		},
 		{
-			name:   "missing server_api_url",
-			mutate: func(c *ClientConfig) { c.ServerAPIURL = "" },
-			want:   "server_api_url is required",
-		},
-		{
-			name:   "bad server_api_url scheme",
-			mutate: func(c *ClientConfig) { c.ServerAPIURL = "ftp://bad" },
-			want:   "server_api_url must start with http",
+			name:   "missing server",
+			mutate: func(c *ClientConfig) { c.Server = "" },
+			want:   "server is required",
 		},
 		{
 			name:   "mtu too low",
@@ -349,7 +349,7 @@ api_key = "my-secret-key"
 
 func TestParseClientConfigWithAPIKey(t *testing.T) {
 	tomlData := `
-server_api_url = "http://1.2.3.4:8080"
+server = "1.2.3.4"
 private_key = "cLiEnTpRiVaTeKeYBase64EnCoDeDhErE="
 api_key = "my-secret-key"
 `

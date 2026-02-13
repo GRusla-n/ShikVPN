@@ -42,8 +42,9 @@ func (c *Client) Connect() error {
 	log.Printf("Client public key: %s", pubKeyB64)
 
 	// Register with server
-	log.Printf("Registering with server at %s...", c.cfg.ServerAPIURL)
-	regResp, err := Register(c.cfg.ServerAPIURL, pubKeyB64, c.cfg.APIKey)
+	apiURL := c.cfg.ServerAPIURL()
+	log.Printf("Registering with server at %s...", apiURL)
+	regResp, err := Register(apiURL, pubKeyB64, c.cfg.APIKey)
 	if err != nil {
 		return fmt.Errorf("registration failed: %w", err)
 	}
@@ -53,11 +54,8 @@ func (c *Client) Connect() error {
 	c.cfg.ServerPublicKey = regResp.ServerPublicKey
 	c.cfg.Address = regResp.AssignedIP
 
-	// Use the endpoint from config (which points to the WG port) or from response
-	serverEndpoint := c.cfg.ServerEndpoint
-	if serverEndpoint == "" {
-		serverEndpoint = regResp.ServerEndpoint
-	}
+	// Use the endpoint returned by the server's registration response
+	serverEndpoint := regResp.ServerEndpoint
 
 	// Create TUN device
 	tun, err := tunnel.CreateTunnel(c.cfg.InterfaceName, c.cfg.MTU, c.cfg.LogLevel)

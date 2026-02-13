@@ -9,8 +9,8 @@ export async function renderConfigEditor(container: HTMLElement) {
     cfg = await (window as any).go.main.App.GetConfig();
   } catch {
     cfg = {
-      server_endpoint: '',
-      server_api_url: '',
+      server: '',
+      api_port: 8080,
       server_public_key: '',
       private_key: '',
       address: '',
@@ -28,13 +28,13 @@ export async function renderConfigEditor(container: HTMLElement) {
       <h2>Configuration</h2>
 
       <div class="form-group">
-        <label>Server API URL</label>
-        <input type="text" id="cfg-server-api-url" value="${esc(cfg.server_api_url)}" placeholder="http://your-server:8080" />
+        <label>Server</label>
+        <input type="text" id="cfg-server" value="${esc(cfg.server)}" placeholder="your-server-ip" />
       </div>
 
       <div class="form-group">
-        <label>Server Endpoint (WireGuard)</label>
-        <input type="text" id="cfg-server-endpoint" value="${esc(cfg.server_endpoint)}" placeholder="your-server:51820" />
+        <label>API Port</label>
+        <input type="number" id="cfg-api-port" value="${cfg.api_port}" min="1" max="65535" />
       </div>
 
       <div class="form-group">
@@ -151,8 +151,8 @@ function readForm(): ClientConfig {
   const num = (id: string) => parseInt((document.getElementById(id) as HTMLInputElement).value, 10) || 0;
 
   return {
-    server_api_url: val('cfg-server-api-url'),
-    server_endpoint: val('cfg-server-endpoint'),
+    server: val('cfg-server'),
+    api_port: num('cfg-api-port'),
     private_key: val('cfg-private-key'),
     api_key: val('cfg-api-key'),
     server_public_key: val('cfg-server-public-key'),

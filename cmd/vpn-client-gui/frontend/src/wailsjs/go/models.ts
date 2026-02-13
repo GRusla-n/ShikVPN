@@ -1,8 +1,8 @@
 export namespace config {
 	
 	export class ClientConfig {
-	    server_endpoint: string;
-	    server_api_url: string;
+	    server: string;
+	    api_port: number;
 	    server_public_key: string;
 	    private_key: string;
 	    address: string;
@@ -12,15 +12,15 @@ export namespace config {
 	    interface_name: string;
 	    api_key: string;
 	    log_level: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClientConfig(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.server_endpoint = source["server_endpoint"];
-	        this.server_api_url = source["server_api_url"];
+	        this.server = source["server"];
+	        this.api_port = source["api_port"];
 	        this.server_public_key = source["server_public_key"];
 	        this.private_key = source["private_key"];
 	        this.address = source["address"];

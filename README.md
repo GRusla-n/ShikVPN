@@ -85,19 +85,19 @@ mtu = 1420
 Create `client.toml` (see `deploy/client.toml.example` for a full template):
 
 ```toml
-server_endpoint = "YOUR_SERVER_PUBLIC_IP:51820"
-server_api_url = "http://YOUR_SERVER_PUBLIC_IP:8080"
+server = "YOUR_SERVER_PUBLIC_IP"
 private_key = "CLIENT_PRIVATE_KEY"
 mtu = 1420
 persistent_keepalive = 25
+# api_port = 8080
 # api_key = "your-secret-key"
 ```
 
 | Field | Description | Default |
 |-------|-------------|---------|
-| `server_endpoint` | Server WireGuard address (`host:port`) | *required* |
-| `server_api_url` | Server HTTP API URL | *required* |
+| `server` | Server IP or hostname | *required* |
 | `private_key` | Client private key from vpn-keygen | *required* |
+| `api_port` | Server registration API port | `8080` |
 | `mtu` | Tunnel MTU | `1420` |
 | `persistent_keepalive` | Keepalive interval in seconds (helps with NAT) | `25` |
 | `interface_name` | TUN interface name | `wg0` |

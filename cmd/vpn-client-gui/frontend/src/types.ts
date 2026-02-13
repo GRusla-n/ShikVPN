@@ -10,8 +10,8 @@ export interface LogEntry {
 }
 
 export interface ClientConfig {
-  server_endpoint: string;
-  server_api_url: string;
+  server: string;
+  api_port: number;
   server_public_key: string;
   private_key: string;
   address: string;

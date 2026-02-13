@@ -1,11 +1,11 @@
 # SimpleVPN Client Configuration
 # Place next to the vpn-client binary and edit values
 
-# Server WireGuard endpoint (host:port for UDP tunnel traffic)
-server_endpoint = "your.server.ip:51820"
+# Server IP or hostname
+server = "your.server.ip"
 
-# Server HTTP API URL (for registration)
-server_api_url = "http://your.server.ip:8080"
+# Server registration API port (default: 8080)
+# api_port = 8080
 
 # Client private key — generate with: vpn-keygen
 private_key = "YOUR_CLIENT_PRIVATE_KEY_BASE64"

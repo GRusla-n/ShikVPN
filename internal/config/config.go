@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -27,8 +26,8 @@ type ServerConfig struct {
 
 // ClientConfig holds the VPN client configuration.
 type ClientConfig struct {
-	ServerEndpoint      string `toml:"server_endpoint" json:"server_endpoint"`
-	ServerAPIURL        string `toml:"server_api_url" json:"server_api_url"`
+	Server              string `toml:"server" json:"server"`
+	APIPort             int    `toml:"api_port" json:"api_port"`
 	ServerPublicKey     string `toml:"server_public_key" json:"server_public_key"`
 	PrivateKey          string `toml:"private_key" json:"private_key"`
 	Address             string `toml:"address" json:"address"`
@@ -38,6 +37,11 @@ type ClientConfig struct {
 	InterfaceName       string `toml:"interface_name" json:"interface_name"`
 	APIKey              string `toml:"api_key" json:"api_key"`
 	LogLevel            string `toml:"log_level" json:"log_level"`
+}
+
+// ServerAPIURL returns the full HTTP URL for the server's registration API.
+func (c *ClientConfig) ServerAPIURL() string {
+	return fmt.Sprintf("http://%s:%d", c.Server, c.APIPort)
 }
 
 // LoadServerConfig reads and parses a server config from a TOML file.
@@ -121,11 +125,8 @@ func ValidateClientConfig(cfg *ClientConfig) error {
 	if err := validateBase64Key(cfg.PrivateKey, "private_key"); err != nil {
 		return err
 	}
-	if cfg.ServerAPIURL == "" {
-		return fmt.Errorf("server_api_url is required")
-	}
-	if !strings.HasPrefix(cfg.ServerAPIURL, "http://") && !strings.HasPrefix(cfg.ServerAPIURL, "https://") {
-		return fmt.Errorf("server_api_url must start with http:// or https://")
+	if cfg.Server == "" {
+		return fmt.Errorf("server is required")
 	}
 	if cfg.MTU < 576 || cfg.MTU > 65535 {
 		return fmt.Errorf("mtu must be between 576 and 65535")
@@ -182,6 +183,9 @@ func applyServerDefaults(cfg *ServerConfig) {
 
 // ApplyClientDefaults fills in zero-value fields with sensible defaults.
 func ApplyClientDefaults(cfg *ClientConfig) {
+	if cfg.APIPort == 0 {
+		cfg.APIPort = DefaultAPIPort
+	}
 	if cfg.MTU == 0 {
 		cfg.MTU = DefaultMTU
 	}
