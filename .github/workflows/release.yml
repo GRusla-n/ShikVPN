@@ -92,17 +92,17 @@ jobs:
           touch cmd/vpn-client-gui/frontend/dist/.gitkeep
           go test ./...
 
-      - uses: actions/download-artifact@v4
-        with:
-          path: gui-artifacts
-          merge-multiple: true
-
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: gui-artifacts
+          merge-multiple: true
 
       - name: Append GUI checksums
         run: |
