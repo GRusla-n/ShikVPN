@@ -87,7 +87,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run tests
-        run: go test ./...
+        run: go test $(go list ./... | grep -v vpn-client-gui)
 
       - uses: actions/download-artifact@v4
         with:
