@@ -27,8 +27,8 @@ func initTray(app *App) {
 
 func onTrayReady() {
 	systray.SetIcon(disconnectedIcon)
-	systray.SetTitle("SimpleVPN")
-	systray.SetTooltip("SimpleVPN - Disconnected")
+	systray.SetTitle("ShikVPN")
+	systray.SetTooltip("ShikVPN - Disconnected")
 
 	mShow := systray.AddMenuItem("Show", "Show window")
 	systray.AddSeparator()
@@ -36,7 +36,7 @@ func onTrayReady() {
 	mDisconnect = systray.AddMenuItem("Disconnect", "Disconnect VPN")
 	mDisconnect.Disable()
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit", "Quit SimpleVPN")
+	mQuit := systray.AddMenuItem("Quit", "Quit ShikVPN")
 
 	mShow.Click(func() {
 		if trayApp != nil {
@@ -63,7 +63,7 @@ func onTrayReady() {
 func updateTrayStatus(connected bool) {
 	if connected {
 		systray.SetIcon(connectedIcon)
-		systray.SetTooltip("SimpleVPN - Connected")
+		systray.SetTooltip("ShikVPN - Connected")
 		if mConnect != nil {
 			mConnect.Disable()
 		}
@@ -72,7 +72,7 @@ func updateTrayStatus(connected bool) {
 		}
 	} else {
 		systray.SetIcon(disconnectedIcon)
-		systray.SetTooltip("SimpleVPN - Disconnected")
+		systray.SetTooltip("ShikVPN - Disconnected")
 		if mConnect != nil {
 			mConnect.Enable()
 		}

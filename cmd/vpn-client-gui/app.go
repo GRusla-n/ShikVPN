@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/gavsh/simplevpn/internal/client"
-	"github.com/gavsh/simplevpn/internal/config"
+	"github.com/gavsh/ShikVPN/internal/client"
+	"github.com/gavsh/ShikVPN/internal/config"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -129,7 +129,7 @@ func (a *App) connectAsync(cfg *config.ClientConfig) {
 	if err != nil {
 		a.status = "error"
 		a.emitStatusLocked("error", "", fmt.Sprintf("Connection failed: %v", err))
-		sendNotification("SimpleVPN", fmt.Sprintf("Connection failed: %v", err))
+		sendNotification("ShikVPN", fmt.Sprintf("Connection failed: %v", err))
 		return
 	}
 
@@ -138,7 +138,7 @@ func (a *App) connectAsync(cfg *config.ClientConfig) {
 	a.status = "connected"
 	a.emitStatusLocked("connected", cfgCopy.Address, "")
 	updateTrayStatus(true)
-	sendNotification("SimpleVPN", fmt.Sprintf("Connected - %s", cfgCopy.Address))
+	sendNotification("ShikVPN", fmt.Sprintf("Connected - %s", cfgCopy.Address))
 }
 
 // Disconnect tears down the VPN connection.
@@ -156,7 +156,7 @@ func (a *App) Disconnect() {
 	a.assignedIP = ""
 	a.emitStatusLocked("disconnected", "", "")
 	updateTrayStatus(false)
-	sendNotification("SimpleVPN", "Disconnected")
+	sendNotification("ShikVPN", "Disconnected")
 }
 
 // GetStatus returns the current VPN status.

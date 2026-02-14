@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gavsh/simplevpn/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/crypto"
 )
 
 func TestBuildServerUAPIConfig(t *testing.T) {

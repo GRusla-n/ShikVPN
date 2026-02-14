@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/gavsh/simplevpn/internal/config"
+	"github.com/gavsh/ShikVPN/internal/config"
 )
 
 // writeConfigToml serializes a ClientConfig to a TOML file.

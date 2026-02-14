@@ -1,4 +1,4 @@
-# SimpleVPN
+# ShikVPN
 
 A lightweight, cross-platform VPN built in Go using WireGuard for tunneling. Clients connect by registering with the server over HTTP and automatically receive an IP address and tunnel configuration.
 
@@ -165,9 +165,9 @@ Press `Ctrl+C` to gracefully shut down either the server or client. The client w
 
 ```bash
 sudo cp build/vpn-server /usr/local/bin/
-sudo mkdir -p /etc/simplevpn
-sudo cp deploy/server.toml.example /etc/simplevpn/server.toml
-# Edit /etc/simplevpn/server.toml with your keys and settings
+sudo mkdir -p /etc/shikvpn
+sudo cp deploy/server.toml.example /etc/shikvpn/server.toml
+# Edit /etc/shikvpn/server.toml with your keys and settings
 ```
 
 2. **Generate an API key** (recommended):
@@ -180,10 +180,10 @@ openssl rand -hex 32
 3. **Install the systemd service:**
 
 ```bash
-sudo cp deploy/simplevpn-server.service /etc/systemd/system/
+sudo cp deploy/shikvpn-server.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now simplevpn-server
-sudo journalctl -u simplevpn-server -f   # view logs
+sudo systemctl enable --now shikvpn-server
+sudo journalctl -u shikvpn-server -f   # view logs
 ```
 
 4. **Open firewall ports:**

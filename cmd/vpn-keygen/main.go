@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/version"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/version"
 )
 
 func main() {

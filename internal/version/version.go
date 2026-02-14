@@ -10,5 +10,5 @@ var (
 )
 
 func String() string {
-	return fmt.Sprintf("simplevpn %s (commit %s, built %s)", Version, Commit, BuildDate)
+	return fmt.Sprintf("ShikVPN %s (commit %s, built %s)", Version, Commit, BuildDate)
 }

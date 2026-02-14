@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SimpleVPN is a lightweight, cross-platform VPN built in Go that uses WireGuard for tunneling. It provides server and client binaries with automatic IP allocation via an HTTP registration API.
+ShikVPN is a lightweight, cross-platform VPN built in Go that uses WireGuard for tunneling. It provides server and client binaries with automatic IP allocation via an HTTP registration API.
 
 ## Build & Test Commands
 

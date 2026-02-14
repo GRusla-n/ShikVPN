@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/tunnel"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 func setupTestAPI(t *testing.T) (*API, *httptest.Server) {

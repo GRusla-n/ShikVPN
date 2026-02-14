@@ -18,7 +18,7 @@ func sendNotification(title, message string) {
 	iconPath := filepath.Join(filepath.Dir(exe), "icon.ico")
 
 	notification := toast.Notification{
-		AppID:   "SimpleVPN",
+		AppID:   "ShikVPN",
 		Title:   title,
 		Message: message,
 	}

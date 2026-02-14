@@ -5,10 +5,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/gavsh/simplevpn/internal/config"
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/network"
-	"github.com/gavsh/simplevpn/internal/tunnel"
+	"github.com/gavsh/ShikVPN/internal/config"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/network"
+	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 // Client orchestrates the VPN client: registration, tunnel, and route management.

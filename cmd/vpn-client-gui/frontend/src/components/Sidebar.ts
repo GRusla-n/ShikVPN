@@ -25,7 +25,7 @@ export function renderSidebar(
 ) {
   container.innerHTML = `
     <div class="sidebar-logo">
-      <h1>SimpleVPN</h1>
+      <h1>ShikVPN</h1>
       <span>WireGuard Client</span>
     </div>
     ${(Object.keys(icons) as Page[])

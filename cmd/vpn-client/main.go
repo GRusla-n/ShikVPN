@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gavsh/simplevpn/internal/client"
-	"github.com/gavsh/simplevpn/internal/config"
-	"github.com/gavsh/simplevpn/internal/version"
-	"github.com/gavsh/simplevpn/internal/wintun"
+	"github.com/gavsh/ShikVPN/internal/client"
+	"github.com/gavsh/ShikVPN/internal/config"
+	"github.com/gavsh/ShikVPN/internal/version"
+	"github.com/gavsh/ShikVPN/internal/wintun"
 )
 
 func main() {

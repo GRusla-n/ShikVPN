@@ -1,4 +1,4 @@
-# SimpleVPN Client Configuration
+# ShikVPN Client Configuration
 
 # Server IP or hostname
 server = "your.server.ip"

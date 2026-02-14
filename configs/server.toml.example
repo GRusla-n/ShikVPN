@@ -1,4 +1,4 @@
-# SimpleVPN Server Configuration
+# ShikVPN Server Configuration
 
 # WireGuard listen port (UDP)
 listen_port = 51820

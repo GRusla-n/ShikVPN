@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gavsh/simplevpn/internal/config"
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/network"
-	"github.com/gavsh/simplevpn/internal/tunnel"
+	"github.com/gavsh/ShikVPN/internal/config"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/network"
+	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 // Server orchestrates the VPN server: tunnel, API, IPAM, and network config.

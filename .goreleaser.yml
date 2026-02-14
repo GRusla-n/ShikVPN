@@ -1,0 +1,76 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: vpn-server
+    main: ./cmd/vpn-server
+    binary: vpn-server
+    ldflags:
+      - -s -w
+      - -X github.com/gavsh/ShikVPN/internal/version.Version={{.Version}}
+      - -X github.com/gavsh/ShikVPN/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/gavsh/ShikVPN/internal/version.BuildDate={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+  - id: vpn-client
+    main: ./cmd/vpn-client
+    binary: vpn-client
+    ldflags:
+      - -s -w
+      - -X github.com/gavsh/ShikVPN/internal/version.Version={{.Version}}
+      - -X github.com/gavsh/ShikVPN/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/gavsh/ShikVPN/internal/version.BuildDate={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+  - id: vpn-keygen
+    main: ./cmd/vpn-keygen
+    binary: vpn-keygen
+    ldflags:
+      - -s -w
+      - -X github.com/gavsh/ShikVPN/internal/version.Version={{.Version}}
+      - -X github.com/gavsh/ShikVPN/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/gavsh/ShikVPN/internal/version.BuildDate={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    name_template: "shikvpn_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - configs/*.example
+      - deploy/shikvpn-server.service
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"

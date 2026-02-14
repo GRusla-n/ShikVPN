@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gavsh/simplevpn/internal/server"
+	"github.com/gavsh/ShikVPN/internal/server"
 )
 
 // retryDelays defines the backoff between registration attempts.

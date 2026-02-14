@@ -95,11 +95,11 @@ func (c *WindowsConfigurator) EnableIPForwarding() error {
 func (c *WindowsConfigurator) ConfigureNAT(ifaceName string, vpnSubnet string) error {
 	// Windows uses Internet Connection Sharing or netsh routing
 	return runCmd("powershell", "-Command",
-		fmt.Sprintf("New-NetNat -Name SimpleVPN -InternalIPInterfaceAddressPrefix %s", vpnSubnet))
+		fmt.Sprintf("New-NetNat -Name ShikVPN -InternalIPInterfaceAddressPrefix %s", vpnSubnet))
 }
 
 func (c *WindowsConfigurator) RemoveNAT(ifaceName string, vpnSubnet string) error {
-	return runCmd("powershell", "-Command", "Remove-NetNat -Name SimpleVPN -Confirm:$false")
+	return runCmd("powershell", "-Command", "Remove-NetNat -Name ShikVPN -Confirm:$false")
 }
 
 // getInterfaceIndex returns the numeric interface index for a named interface.

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/tunnel"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 // RegisterRequest is the JSON body for client registration.

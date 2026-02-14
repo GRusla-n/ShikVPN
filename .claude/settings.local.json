@@ -9,7 +9,9 @@
       "Bash(dir:*)",
       "Bash(go build:*)",
       "Bash(docker compose up:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(ren \".idea\\\\simplevpn.iml\" \"shikvpn.iml\")",
+      "Bash(go vet:*)"
     ]
   }
 }

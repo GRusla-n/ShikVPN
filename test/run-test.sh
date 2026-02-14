@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=== SimpleVPN Integration Test ==="
+echo "=== ShikVPN Integration Test ==="
 
 # Step 1: Wait for server API to be ready
 echo "[1/4] Waiting for server API..."

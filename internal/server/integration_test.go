@@ -10,9 +10,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gavsh/simplevpn/internal/config"
-	"github.com/gavsh/simplevpn/internal/crypto"
-	"github.com/gavsh/simplevpn/internal/tunnel"
+	"github.com/gavsh/ShikVPN/internal/config"
+	"github.com/gavsh/ShikVPN/internal/crypto"
+	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 func TestIntegrationRegisterAndVerifyPeer(t *testing.T) {

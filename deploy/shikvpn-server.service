@@ -1,11 +1,11 @@
 [Unit]
-Description=SimpleVPN Server
+Description=ShikVPN Server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/vpn-server -config /etc/simplevpn/server.toml
+ExecStart=/usr/local/bin/vpn-server -config /etc/shikvpn/server.toml
 Restart=on-failure
 RestartSec=5
 
@@ -20,7 +20,7 @@ PrivateTmp=yes
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=simplevpn
+SyslogIdentifier=shikvpn
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,5 @@
-# SimpleVPN Server Configuration
-# Copy to /etc/simplevpn/server.toml and edit values
+# ShikVPN Server Configuration
+# Copy to /etc/shikvpn/server.toml and edit values
 
 # WireGuard UDP listen port
 listen_port = 51820
