@@ -16,7 +16,7 @@ jobs:
         include:
           - os: ubuntu-22.04
             goos: linux
-          - os: macos-13
+          - os: macos-latest
             goos: darwin
           - os: windows-latest
             goos: windows
@@ -58,7 +58,7 @@ jobs:
       - name: Archive (macOS)
         if: matrix.goos == 'darwin'
         working-directory: cmd/vpn-client-gui/build/bin
-        run: tar czf "shikvpn-gui_${{ steps.version.outputs.version }}_darwin_amd64.tar.gz" shikvpn-gui.app
+        run: tar czf "shikvpn-gui_${{ steps.version.outputs.version }}_darwin_arm64.tar.gz" shikvpn-gui.app
 
       - name: Archive (Windows)
         if: matrix.goos == 'windows'
