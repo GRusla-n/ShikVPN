@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
 
 	"github.com/BurntSushi/toml"
 )
+
+// validIfaceNameRe matches safe interface names: alphanumeric, hyphens, underscores, dots, max 15 chars.
+var validIfaceNameRe = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,14}$`)
 
 // ServerConfig holds the VPN server configuration.
 type ServerConfig struct {
@@ -111,6 +115,11 @@ func ValidateServerConfig(cfg *ServerConfig) error {
 	if cfg.MTU < 576 || cfg.MTU > 65535 {
 		return fmt.Errorf("mtu must be between 576 and 65535")
 	}
+	if cfg.InterfaceName != "" {
+		if err := validateInterfaceName(cfg.InterfaceName); err != nil {
+			return err
+		}
+	}
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return err
 	}
@@ -130,6 +139,11 @@ func ValidateClientConfig(cfg *ClientConfig) error {
 	}
 	if cfg.MTU < 576 || cfg.MTU > 65535 {
 		return fmt.Errorf("mtu must be between 576 and 65535")
+	}
+	if cfg.InterfaceName != "" {
+		if err := validateInterfaceName(cfg.InterfaceName); err != nil {
+			return err
+		}
 	}
 	if err := validateLogLevel(cfg.LogLevel); err != nil {
 		return err
@@ -155,6 +169,13 @@ func validateLogLevel(level string) error {
 	default:
 		return fmt.Errorf("log_level must be one of: verbose, error, silent (got %q)", level)
 	}
+}
+
+func validateInterfaceName(name string) error {
+	if !validIfaceNameRe.MatchString(name) {
+		return fmt.Errorf("interface_name %q is invalid: must be 1-15 alphanumeric characters, hyphens, underscores, or dots", name)
+	}
+	return nil
 }
 
 func applyServerDefaults(cfg *ServerConfig) {

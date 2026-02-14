@@ -3,16 +3,20 @@ package client
 import (
 	"fmt"
 	"log"
+	"net"
 	"strings"
+	"sync"
 
 	"github.com/gavsh/ShikVPN/internal/config"
 	"github.com/gavsh/ShikVPN/internal/crypto"
 	"github.com/gavsh/ShikVPN/internal/network"
+	"github.com/gavsh/ShikVPN/internal/server"
 	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
 
 // Client orchestrates the VPN client: registration, tunnel, and route management.
 type Client struct {
+	mu        sync.Mutex
 	cfg       *config.ClientConfig
 	tunnel    *tunnel.Tunnel
 	netConfig network.InterfaceConfigurator
@@ -49,6 +53,11 @@ func (c *Client) Connect() error {
 		return fmt.Errorf("registration failed: %w", err)
 	}
 	log.Printf("Registered successfully. Assigned IP: %s", regResp.AssignedIP)
+
+	// Validate server response before trusting it
+	if err := validateRegistrationResponse(regResp); err != nil {
+		return fmt.Errorf("invalid registration response: %w", err)
+	}
 
 	// Store server public key and assigned address
 	c.cfg.ServerPublicKey = regResp.ServerPublicKey
@@ -100,7 +109,9 @@ func (c *Client) Connect() error {
 		return fmt.Errorf("failed to configure network: %w", err)
 	}
 
+	c.mu.Lock()
 	c.connected = true
+	c.mu.Unlock()
 	log.Println("VPN connected successfully")
 	return nil
 }
@@ -133,9 +144,13 @@ func (c *Client) configureNetwork(serverEndpoint string) error {
 
 // Disconnect tears down the VPN tunnel and restores routes.
 func (c *Client) Disconnect() {
+	c.mu.Lock()
 	if !c.connected {
+		c.mu.Unlock()
 		return
 	}
+	c.connected = false
+	c.mu.Unlock()
 	log.Println("Disconnecting VPN...")
 
 	if c.tunnel != nil {
@@ -150,17 +165,46 @@ func (c *Client) Disconnect() {
 		log.Println("Tunnel closed")
 	}
 
-	c.connected = false
 	log.Println("VPN disconnected")
 }
 
-// extractGateway derives the gateway IP from a CIDR address.
-// e.g., "10.0.0.2/24" → "10.0.0.1"
-func extractGateway(address string) string {
-	ip := strings.SplitN(address, "/", 2)[0]
-	parts := strings.Split(ip, ".")
-	if len(parts) == 4 {
-		return fmt.Sprintf("%s.%s.%s.1", parts[0], parts[1], parts[2])
+// validateRegistrationResponse checks that all fields from the server are well-formed
+// before they are used to configure the local network.
+func validateRegistrationResponse(resp *server.RegisterResponse) error {
+	// Validate AssignedIP is a valid CIDR
+	if _, _, err := net.ParseCIDR(resp.AssignedIP); err != nil {
+		return fmt.Errorf("assigned_ip is not a valid CIDR: %w", err)
 	}
-	return ""
+	// Validate ServerPublicKey is a valid 32-byte base64-encoded key
+	if _, err := crypto.KeyFromBase64(resp.ServerPublicKey); err != nil {
+		return fmt.Errorf("server_public_key is invalid: %w", err)
+	}
+	// Validate ServerEndpoint is host:port
+	host, port, err := net.SplitHostPort(resp.ServerEndpoint)
+	if err != nil || host == "" || port == "" {
+		return fmt.Errorf("server_endpoint %q is not a valid host:port", resp.ServerEndpoint)
+	}
+	// Validate DNS servers are valid IPs
+	for _, dns := range resp.DNSServers {
+		if net.ParseIP(dns) == nil {
+			return fmt.Errorf("dns_server %q is not a valid IP address", dns)
+		}
+	}
+	return nil
+}
+
+// extractGateway derives the gateway IP from a CIDR address.
+// e.g., "10.0.0.2/24" -> "10.0.0.1"
+func extractGateway(address string) string {
+	ipStr := strings.SplitN(address, "/", 2)[0]
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return ""
+	}
+	ip = ip.To4()
+	if ip == nil {
+		return ""
+	}
+	// Set last octet to 1 for the gateway
+	return fmt.Sprintf("%d.%d.%d.1", ip[0], ip[1], ip[2])
 }

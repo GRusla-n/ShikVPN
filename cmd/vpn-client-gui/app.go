@@ -60,8 +60,13 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) beforeClose(ctx context.Context) bool {
 	// Hide to tray instead of quitting
-	if !a.hidden {
+	a.mu.Lock()
+	hidden := a.hidden
+	if !hidden {
 		a.hidden = true
+	}
+	a.mu.Unlock()
+	if !hidden {
 		runtime.WindowHide(ctx)
 		return true // prevent close
 	}
@@ -79,7 +84,9 @@ func (a *App) shutdown(ctx context.Context) {
 
 // ShowWindow brings the window back from the tray.
 func (a *App) ShowWindow() {
+	a.mu.Lock()
 	a.hidden = false
+	a.mu.Unlock()
 	runtime.WindowShow(a.ctx)
 	runtime.WindowSetAlwaysOnTop(a.ctx, true)
 	runtime.WindowSetAlwaysOnTop(a.ctx, false)
@@ -87,7 +94,9 @@ func (a *App) ShowWindow() {
 
 // Quit exits the application.
 func (a *App) Quit() {
+	a.mu.Lock()
 	a.hidden = true // allow close to proceed
+	a.mu.Unlock()
 	a.shutdown(a.ctx)
 	runtime.Quit(a.ctx)
 }

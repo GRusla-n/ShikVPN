@@ -4,6 +4,7 @@ package network
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"strings"
 )
@@ -19,6 +20,12 @@ func NewConfigurator() InterfaceConfigurator {
 }
 
 func (c *DarwinConfigurator) AssignAddress(ifaceName string, address string) error {
+	if err := ValidateInterfaceName(ifaceName); err != nil {
+		return err
+	}
+	if err := ValidateCIDR(address); err != nil {
+		return err
+	}
 	// macOS ifconfig wants "addr netmask mask" format
 	ip, mask := splitCIDR(address)
 	return runCmd("ifconfig", ifaceName, "inet", ip, ip, "netmask", mask)
@@ -98,20 +105,12 @@ func runCmd(name string, args ...string) error {
 
 // splitCIDR splits "10.0.0.1/24" into IP and dotted netmask.
 func splitCIDR(cidr string) (string, string) {
-	parts := strings.SplitN(cidr, "/", 2)
-	ip := parts[0]
-	mask := "255.255.255.0" // default /24
-	if len(parts) == 2 {
-		switch parts[1] {
-		case "8":
-			mask = "255.0.0.0"
-		case "16":
-			mask = "255.255.0.0"
-		case "24":
-			mask = "255.255.255.0"
-		case "32":
-			mask = "255.255.255.255"
-		}
+	ip, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		// Fallback: treat as plain IP with /24
+		parts := strings.SplitN(cidr, "/", 2)
+		return parts[0], "255.255.255.0"
 	}
-	return ip, mask
+	mask := ipNet.Mask
+	return ip.String(), fmt.Sprintf("%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3])
 }

@@ -51,7 +51,7 @@ func Register(apiURL string, publicKey string, apiKey string) (*server.RegisterR
 			continue
 		}
 
-		respBody, err := io.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<16)) // 64KB max response
 		resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to read response: %w", err)

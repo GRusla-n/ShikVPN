@@ -21,6 +21,12 @@ func NewConfigurator() InterfaceConfigurator {
 }
 
 func (c *WindowsConfigurator) AssignAddress(ifaceName string, address string) error {
+	if err := ValidateInterfaceName(ifaceName); err != nil {
+		return err
+	}
+	if err := ValidateCIDR(address); err != nil {
+		return err
+	}
 	ip, mask := splitCIDR(address)
 	return runCmd("netsh", "interface", "ip", "set", "address",
 		fmt.Sprintf("name=%s", ifaceName), "static", ip, mask)
@@ -93,9 +99,13 @@ func (c *WindowsConfigurator) EnableIPForwarding() error {
 }
 
 func (c *WindowsConfigurator) ConfigureNAT(ifaceName string, vpnSubnet string) error {
+	// Validate vpnSubnet is a proper CIDR before passing to PowerShell
+	if _, _, err := net.ParseCIDR(vpnSubnet); err != nil {
+		return fmt.Errorf("invalid VPN subnet CIDR %q: %w", vpnSubnet, err)
+	}
 	// Windows uses Internet Connection Sharing or netsh routing
 	return runCmd("powershell", "-Command",
-		fmt.Sprintf("New-NetNat -Name ShikVPN -InternalIPInterfaceAddressPrefix %s", vpnSubnet))
+		fmt.Sprintf("New-NetNat -Name 'ShikVPN' -InternalIPInterfaceAddressPrefix '%s'", vpnSubnet))
 }
 
 func (c *WindowsConfigurator) RemoveNAT(ifaceName string, vpnSubnet string) error {
@@ -123,20 +133,12 @@ func runCmd(name string, args ...string) error {
 
 // splitCIDR splits "10.0.0.1/24" into IP and dotted netmask.
 func splitCIDR(cidr string) (string, string) {
-	parts := strings.SplitN(cidr, "/", 2)
-	ip := parts[0]
-	mask := "255.255.255.0" // default /24
-	if len(parts) == 2 {
-		switch parts[1] {
-		case "8":
-			mask = "255.0.0.0"
-		case "16":
-			mask = "255.255.0.0"
-		case "24":
-			mask = "255.255.255.0"
-		case "32":
-			mask = "255.255.255.255"
-		}
+	ip, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		// Fallback: treat as plain IP with /24
+		parts := strings.SplitN(cidr, "/", 2)
+		return parts[0], "255.255.255.0"
 	}
-	return ip, mask
+	mask := ipNet.Mask
+	return ip.String(), fmt.Sprintf("%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3])
 }

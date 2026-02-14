@@ -20,5 +20,5 @@ func Extract() error {
 		return fmt.Errorf("wintun: cannot find executable path: %w", err)
 	}
 	dllPath := filepath.Join(filepath.Dir(exe), "wintun.dll")
-	return os.WriteFile(dllPath, wintunDLL, 0644)
+	return os.WriteFile(dllPath, wintunDLL, 0755)
 }

@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
-	"strings"
+	"net"
 	"time"
 
 	"github.com/gavsh/ShikVPN/internal/config"
@@ -110,16 +110,10 @@ func (s *Server) configureNetwork() error {
 	}
 
 	// Configure NAT
+	// Extract network address from CIDR (e.g., "10.0.0.1/24" -> "10.0.0.0/24")
 	subnet := s.cfg.Address
-	// Extract subnet from address (e.g., "10.0.0.1/24" -> "10.0.0.0/24")
-	if idx := strings.LastIndex(subnet, "."); idx != -1 {
-		parts := strings.SplitN(subnet, "/", 2)
-		if len(parts) == 2 {
-			ipParts := strings.Split(parts[0], ".")
-			if len(ipParts) == 4 {
-				subnet = fmt.Sprintf("%s.%s.%s.0/%s", ipParts[0], ipParts[1], ipParts[2], parts[1])
-			}
-		}
+	if _, network, err := net.ParseCIDR(s.cfg.Address); err == nil {
+		subnet = network.String()
 	}
 
 	if err := s.netConfig.ConfigureNAT(ifaceName, subnet); err != nil {
@@ -152,14 +146,8 @@ func (s *Server) Stop() {
 
 		// Remove NAT
 		subnet := s.cfg.Address
-		if idx := strings.LastIndex(subnet, "."); idx != -1 {
-			parts := strings.SplitN(subnet, "/", 2)
-			if len(parts) == 2 {
-				ipParts := strings.Split(parts[0], ".")
-				if len(ipParts) == 4 {
-					subnet = fmt.Sprintf("%s.%s.%s.0/%s", ipParts[0], ipParts[1], ipParts[2], parts[1])
-				}
-			}
+		if _, network, err := net.ParseCIDR(s.cfg.Address); err == nil {
+			subnet = network.String()
 		}
 		_ = s.netConfig.RemoveNAT(ifaceName, subnet)
 

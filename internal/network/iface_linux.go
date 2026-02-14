@@ -19,10 +19,19 @@ func NewConfigurator() InterfaceConfigurator {
 }
 
 func (c *LinuxConfigurator) AssignAddress(ifaceName string, address string) error {
+	if err := ValidateInterfaceName(ifaceName); err != nil {
+		return err
+	}
+	if err := ValidateCIDR(address); err != nil {
+		return err
+	}
 	return runCmd("ip", "addr", "add", address, "dev", ifaceName)
 }
 
 func (c *LinuxConfigurator) SetInterfaceUp(ifaceName string) error {
+	if err := ValidateInterfaceName(ifaceName); err != nil {
+		return err
+	}
 	return runCmd("ip", "link", "set", ifaceName, "up")
 }
 
@@ -73,6 +82,9 @@ func (c *LinuxConfigurator) EnableIPForwarding() error {
 }
 
 func (c *LinuxConfigurator) ConfigureNAT(ifaceName string, vpnSubnet string) error {
+	if err := ValidateCIDR(vpnSubnet); err != nil {
+		return err
+	}
 	// Find the default outbound interface
 	out, err := exec.Command("ip", "route", "show", "default").Output()
 	if err != nil {

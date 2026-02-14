@@ -17,11 +17,19 @@ type IPAM struct {
 	nextHost  uint32            // next host number to try (starts at 2)
 }
 
+// maxIPAMPrefix is the minimum prefix length allowed (prevents huge iteration).
+const maxIPAMPrefix = 16
+
 // NewIPAM creates a new IP allocator for the given CIDR (e.g., "10.0.0.1/24").
 func NewIPAM(cidr string) (*IPAM, error) {
 	ip, network, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid CIDR %q: %w", cidr, err)
+	}
+
+	ones, _ := network.Mask.Size()
+	if ones < maxIPAMPrefix {
+		return nil, fmt.Errorf("subnet /%d is too large; minimum prefix length is /%d", ones, maxIPAMPrefix)
 	}
 
 	return &IPAM{

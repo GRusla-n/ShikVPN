@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +11,9 @@ import (
 	"github.com/gavsh/ShikVPN/internal/crypto"
 	"github.com/gavsh/ShikVPN/internal/tunnel"
 )
+
+// maxRequestBodySize limits registration request bodies to 4KB.
+const maxRequestBodySize = 4096
 
 // RegisterRequest is the JSON body for client registration.
 type RegisterRequest struct {
@@ -79,6 +81,9 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Limit request body size to prevent memory exhaustion
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
+
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -92,7 +97,8 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	// Validate the key is valid base64
 	if _, err := crypto.KeyFromBase64(req.PublicKey); err != nil {
-		http.Error(w, fmt.Sprintf("invalid public_key: %v", err), http.StatusBadRequest)
+		log.Printf("Invalid public_key from client: %v", err)
+		http.Error(w, "invalid public_key format", http.StatusBadRequest)
 		return
 	}
 
@@ -124,7 +130,11 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Registered peer %s with IP %s", req.PublicKey[:8]+"...", assignedIP.String())
+	truncKey := req.PublicKey
+	if len(truncKey) > 8 {
+		truncKey = truncKey[:8]
+	}
+	log.Printf("Registered peer %s... with IP %s", truncKey, assignedIP.String())
 
 	resp := RegisterResponse{
 		AssignedIP:      assignedIP.String() + "/24",
@@ -140,9 +150,16 @@ func (a *API) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 // ListenAndServe starts the API server.
 func (a *API) ListenAndServe(addr string) error {
+	if a.apiKey == "" {
+		log.Println("WARNING: API server starting without authentication. Set api_key in config to require auth.")
+	}
 	a.server = &http.Server{
-		Addr:    addr,
-		Handler: a.mux,
+		Addr:              addr,
+		Handler:           a.mux,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	log.Printf("API server listening on %s", addr)
 	return a.server.ListenAndServe()
