@@ -43,7 +43,7 @@ jobs:
 
       - name: Build GUI
         working-directory: cmd/vpn-client-gui
-        run: wails build -clean -production
+        run: wails build -clean
 
       - name: Get version
         id: version
