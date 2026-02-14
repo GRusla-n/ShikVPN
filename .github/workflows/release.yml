@@ -87,7 +87,10 @@ jobs:
           go-version-file: go.mod
 
       - name: Run tests
-        run: go test $(go list ./... | grep -v vpn-client-gui)
+        run: |
+          mkdir -p cmd/vpn-client-gui/frontend/dist
+          touch cmd/vpn-client-gui/frontend/dist/.gitkeep
+          go test ./...
 
       - uses: actions/download-artifact@v4
         with:
